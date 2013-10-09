@@ -1,0 +1,31 @@
+.background {
+	
+	-fx-background-color:rgb(63,63,63);
+	
+}
+
+.button  {
+	
+	-fx-background-radius: 0;
+	-fx-background-color:rgb(63,63,63);
+	-fx-border-color: white;
+	-fx-text-fill:white;	
+}
+
+.button:hover {
+	
+	-fx-border-width: 3px;
+	
+}
+
+.button:pressed, .button:default:hover:pressed {
+	-fx-background-color:white;
+	-fx-text-fill:rgb(63,63,63);	
+	-fx-border-width:0px;
+	-fx-border-color: rgb(63,63,63);
+  
+}
+
+.button:default:hover {
+    -fx-background-color: derive(-fx-focus-color,30%);
+}

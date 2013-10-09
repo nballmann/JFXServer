@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.net.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.text.*?>
+
+<StackPane minHeight="400.0" prefWidth="300.0" styleClass="background" xmlns:fx="http://javafx.com/fxml" fx:controller="org.nic.jfxserver.JFXServer">
+  <!-- TODO Add Nodes -->
+  <children>
+    <BorderPane prefHeight="400.0" prefWidth="300.0">
+      <bottom>
+        <Button mnemonicParsing="false" onAction="#handleDisconnectButton" prefWidth="300.0" text="disconnect" textAlignment="CENTER" textOverrun="CLIP" underline="false" BorderPane.alignment="BOTTOM_CENTER">
+          <BorderPane.margin>
+            <Insets bottom="5.0" left="5.0" right="5.0" fx:id="x1" />
+          </BorderPane.margin>
+        </Button>
+      </bottom>
+      <center>
+        <FlowPane prefHeight="200.0" prefWidth="200.0">
+          <children>
+            <HBox id="HBox" alignment="CENTER" prefWidth="300.0" spacing="5.0">
+              <children>
+                <Label fx:id="ipLabel" alignment="TOP_RIGHT" contentDisplay="CENTER" text="Server IP" textAlignment="CENTER" textFill="WHITE">
+                  <font>
+                    <Font size="14.0" />
+                  </font>
+                </Label>
+              </children>
+              <padding>
+                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+              </padding>
+            </HBox>
+            <ListView fx:id="clientListView" editable="false" orientation="VERTICAL" prefHeight="325.0" prefWidth="290.0" FlowPane.margin="$x1" />
+          </children>
+        </FlowPane>
+      </center>
+      <top>
+        <MenuBar>
+          <menus>
+            <Menu mnemonicParsing="false" text="File">
+              <items>
+                <MenuItem mnemonicParsing="false" onAction="#handleClose" text="Exit" />
+              </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="Edit">
+              <items>
+                <MenuItem disable="true" mnemonicParsing="false" text="Delete" />
+              </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="Help">
+              <items>
+                <MenuItem disable="true" mnemonicParsing="false" text="About" />
+              </items>
+            </Menu>
+          </menus>
+        </MenuBar>
+      </top>
+    </BorderPane>
+  </children>
+  <stylesheets>
+    <URL value="@main_style.css" />
+  </stylesheets>
+</StackPane>
