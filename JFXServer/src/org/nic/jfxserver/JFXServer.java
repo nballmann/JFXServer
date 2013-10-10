@@ -8,7 +8,9 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -45,6 +47,11 @@ public class JFXServer extends Application {
 	private static ArrayList<Integer> clientStates = new ArrayList<>();
 	private static ObservableList<String> clientList = FXCollections.observableArrayList();
 	private static ArrayList<DataPackage> dataList = new ArrayList<>();
+	
+	private static ReadWriteLock lock = new ReentrantReadWriteLock();
+	
+	private static Lock readLock = lock.readLock();
+	private static Lock writeLock = lock.writeLock();
 
 	private static Runnable accept = new Runnable() {
 
@@ -60,10 +67,13 @@ public class JFXServer extends Application {
 
 				while(running) {
 
+					writeLock.lock();
+					
 					try  {
+						
 						Socket socket = server.accept();
 
-						synchronized (this) {
+//						synchronized (this) {
 
 							System.out.println("Server/accept: new Client connected");
 
@@ -120,7 +130,7 @@ public class JFXServer extends Application {
 								oos.writeObject("Your name is already taken!");
 
 							}
-						}
+//						}
 					}
 					catch (InterruptedIOException e) {
 						//						System.out.println("Connection Timeout");
@@ -131,6 +141,11 @@ public class JFXServer extends Application {
 					} catch (ClassNotFoundException e) {
 						e.printStackTrace();
 					}
+					finally {
+						
+						writeLock.unlock();
+						
+					}
 
 				}
 			} catch (InterruptedIOException e) {
@@ -138,10 +153,6 @@ public class JFXServer extends Application {
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
-			}
-			finally {
-
-
 			}
 
 		}
@@ -158,8 +169,10 @@ public class JFXServer extends Application {
 			System.out.println("Send Thread started");
 
 			while (running) {
+				
+//				writeLock.lock();
 
-				synchronized (this) {
+//				synchronized (this) {
 
 					for ( int i = 0; i < socketList.size(); i++ ) {
 
@@ -170,7 +183,6 @@ public class JFXServer extends Application {
 								oos = new ObjectOutputStream(socketList.get(i).getOutputStream());
 								int clientState = clientStates.get(i);
 								oos.writeObject(clientState);
-
 								//								System.out.println("Server/send: client state");
 
 								oos = new ObjectOutputStream(socketList.get(i).getOutputStream());
@@ -192,14 +204,20 @@ public class JFXServer extends Application {
 								}
 							}
 
-
 						} 
 						catch (Exception e) {
+							disconnectClient(i);
+							i--;
 							e.printStackTrace(); 
+						}
+						finally {
+							
+//							writeLock.unlock();
+							
 						}
 
 					}
-				}
+//				}
 
 			}
 
@@ -216,10 +234,11 @@ public class JFXServer extends Application {
 
 			System.out.println("Receive Thread started");
 
-
 			while (running) {
 
-				synchronized (this) {
+//				synchronized (this) {
+					
+					writeLock.lock();
 
 					for (int i = 0; i < socketList.size(); i++) {
 
@@ -248,7 +267,6 @@ public class JFXServer extends Application {
 								}
 							}
 
-
 						} 
 						catch (Exception e) // client disconnected without notification of the server
 						{
@@ -264,9 +282,15 @@ public class JFXServer extends Application {
 							}
 //							break;
 						}
+						finally {
+							
+//							writeLock.unlock();
+							
+						}
+						
 					}
 
-				}
+//				}
 			}
 
 		}
