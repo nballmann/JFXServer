@@ -47,9 +47,9 @@ public class JFXServer extends Application {
 	private static ArrayList<Integer> clientStates = new ArrayList<>();
 	private static ObservableList<String> clientList = FXCollections.observableArrayList();
 	private static ArrayList<DataPackage> dataList = new ArrayList<>();
-	
+
 	private static ReadWriteLock lock = new ReentrantReadWriteLock();
-	
+
 	private static Lock readLock = lock.readLock();
 	private static Lock writeLock = lock.writeLock();
 
@@ -68,69 +68,69 @@ public class JFXServer extends Application {
 				while(running) {
 
 					writeLock.lock();
-					
+
 					try  {
-						
+
 						Socket socket = server.accept();
 
-//						synchronized (this) {
+						//						synchronized (this) {
 
-							System.out.println("Server/accept: new Client connected");
+						System.out.println("Server/accept: new Client connected");
 
-							ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+						ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
-							final String username = (String) ois.readObject();
+						final String username = (String) ois.readObject();
 
-							System.out.println("Server/accept: read username: " + username);
+						System.out.println("Server/accept: read username: " + username);
 
-							boolean accepted = true;
+						boolean accepted = true;
 
-							for(int i = 0; i < dataList.size(); i++) {
+						for(int i = 0; i < dataList.size(); i++) {
 
-								if(dataList.get(i).username.toLowerCase().equals(username.toLowerCase()))  {
+							if(dataList.get(i).username.toLowerCase().equals(username.toLowerCase()))  {
 
-									accepted = false;
-									break;
+								accepted = false;
+								break;
+
+							}
+
+						}
+
+						ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+
+						if(accepted) {
+
+							oos.writeObject("Welcome to the Server!");
+
+							System.out.println("Server/accept: wrote welcome message!");
+
+							final String host = socket.getInetAddress().getHostAddress();
+
+							Platform.runLater(new Runnable() {
+
+								@Override
+								public void run() {
+									clientList.add(username + " - " + host);
 
 								}
 
-							}
+							});
 
-							ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+							clientStates.add(0);
 
-							if(accepted) {
+							DataPackage dp = new DataPackage();
+							dp.username = username;
 
-								oos.writeObject("Welcome to the Server!");
+							dataList.add(dp);
+							socketList.add(socket);
+							System.out.println(socketList.size());
+						}
+						else {
 
-								System.out.println("Server/accept: wrote welcome message!");
+							oos.writeObject("Your name is already taken!");
 
-								final String host = socket.getInetAddress().getHostAddress();
-
-								Platform.runLater(new Runnable() {
-
-									@Override
-									public void run() {
-										clientList.add(username + " - " + host);
-
-									}
-
-								});
-
-								clientStates.add(0);
-
-								DataPackage dp = new DataPackage();
-								dp.username = username;
-
-								dataList.add(dp);
-								socketList.add(socket);
-								System.out.println(socketList.size());
-							}
-							else {
-
-								oos.writeObject("Your name is already taken!");
-
-							}
-//						}
+						}
+						//						}
 					}
 					catch (InterruptedIOException e) {
 						//						System.out.println("Connection Timeout");
@@ -142,9 +142,9 @@ public class JFXServer extends Application {
 						e.printStackTrace();
 					}
 					finally {
-						
+
 						writeLock.unlock();
-						
+
 					}
 
 				}
@@ -169,55 +169,57 @@ public class JFXServer extends Application {
 			System.out.println("Send Thread started");
 
 			while (running) {
-				
-//				writeLock.lock();
 
-//				synchronized (this) {
+				//				writeLock.lock();
 
-					for ( int i = 0; i < socketList.size(); i++ ) {
+				//				synchronized (this) {
 
-						try {
+				for ( int i = 0; i < socketList.size(); i++ ) {
 
-							if(socketList.get(i) != null || !socketList.get(i).isClosed())
+					try {
+						
+						Thread.sleep(5);
+
+						if(socketList.get(i) != null || !socketList.get(i).isClosed())
+						{
+							oos = new ObjectOutputStream(socketList.get(i).getOutputStream());
+							int clientState = clientStates.get(i);
+							oos.writeObject(clientState);
+							//								System.out.println("Server/send: client state");
+
+							oos = new ObjectOutputStream(socketList.get(i).getOutputStream());
+							oos.writeObject(dataList);
+
+							//								System.out.println("Server/send: data list");
+
+							if( clientState == 1) // kicked by server
 							{
-								oos = new ObjectOutputStream(socketList.get(i).getOutputStream());
-								int clientState = clientStates.get(i);
-								oos.writeObject(clientState);
-								//								System.out.println("Server/send: client state");
-
-								oos = new ObjectOutputStream(socketList.get(i).getOutputStream());
-								oos.writeObject(dataList);
-
-								//								System.out.println("Server/send: data list");
-
-								if( clientState == 1) // kicked by server
-								{
-									System.out.println("kicked by server");
-									disconnectClient(i);
-									i--;
-								}
-								else if(clientState == 2) // server disconnected
-								{
-									System.out.println("server disconnected");
-									disconnectClient(i);
-									i--;
-								}
+								System.out.println("kicked by server");
+								disconnectClient(i);
+								i--;
 							}
+							else if(clientState == 2) // server disconnected
+							{
+								System.out.println("server disconnected");
+								disconnectClient(i);
+								i--;
+							}
+						}
 
-						} 
-						catch (Exception e) {
-							disconnectClient(i);
-							i--;
-							e.printStackTrace(); 
-						}
-						finally {
-							
-//							writeLock.unlock();
-							
-						}
+					} 
+					catch (Exception e) {
+						disconnectClient(i);
+						i--;
+						e.printStackTrace(); 
+					}
+					finally {
+
+						//	writeLock.unlock();
 
 					}
-//				}
+
+				}
+				//				}
 
 			}
 
@@ -236,61 +238,58 @@ public class JFXServer extends Application {
 
 			while (running) {
 
-//				synchronized (this) {
-					
-					writeLock.lock();
+				writeLock.lock();
 
-					for (int i = 0; i < socketList.size(); i++) {
+				for (int i = 0; i < socketList.size(); i++) {
 
-						try {
+					try {
 
-							if(socketList.get(i) != null || !socketList.get(i).isClosed())
-							{
-								ois = new ObjectInputStream(socketList.get(i).getInputStream());
-								int receiveState = (Integer) ois.readObject();
-
-								//							System.out.println("Server/receive: state");
-
-								ois = new ObjectInputStream(socketList.get(i).getInputStream());
-								DataPackage dp = (DataPackage) ois.readObject();
-
-								//							System.out.println("Server/receive: datapackage");
-
-								dataList.set(i, dp);
-
-								if ( receiveState == 1 ) // client disconnected by user 
-								{
-
-									System.out.println("client disconnected by user");
-									disconnectClient(i);
-									i--;
-								}
-							}
-
-						} 
-						catch (Exception e) // client disconnected without notification of the server
+						if(socketList.get(i) != null || !socketList.get(i).isClosed())
 						{
-							System.out.println("bad client disconnect");
-							disconnectClient(i);
-							i--;
-//							e.printStackTrace();
-							
-							for(String client : clientList) {
-								
-								System.out.println(client);
-								
+							ois = new ObjectInputStream(socketList.get(i).getInputStream());
+							int receiveState = (Integer) ois.readObject();
+
+							//							System.out.println("Server/receive: state");
+
+							ois = new ObjectInputStream(socketList.get(i).getInputStream());
+							DataPackage dp = (DataPackage) ois.readObject();
+
+							//							System.out.println("Server/receive: datapackage");
+
+							dataList.set(i, dp);
+
+							if ( receiveState == 1 ) // client disconnected by user 
+							{
+
+								System.out.println("client disconnected by user");
+								disconnectClient(i);
+								i--;
 							}
-//							break;
 						}
-						finally {
-							
-//							writeLock.unlock();
-							
+
+					} 
+					catch (Exception e) // client disconnected without notification of the server
+					{
+						System.out.println("bad client disconnect");
+						disconnectClient(i);
+						i--;
+						//							e.printStackTrace();
+
+						for(String client : clientList) {
+
+							System.out.println(client);
+
 						}
-						
+						//							break;
+					}
+					finally {
+
+						//							writeLock.unlock();
+
 					}
 
-//				}
+				}
+
 			}
 
 		}
@@ -298,6 +297,9 @@ public class JFXServer extends Application {
 	};
 
 
+	/**
+	 * main
+	 */
 	public static void main(String[] args) {
 		launch();
 	}
@@ -321,9 +323,9 @@ public class JFXServer extends Application {
 			clientStates.remove(index);
 
 		} catch (Exception e) { 
-//			e.printStackTrace();
+			//			e.printStackTrace();
 			// not much to do here...
-			}
+		}
 
 	}
 
