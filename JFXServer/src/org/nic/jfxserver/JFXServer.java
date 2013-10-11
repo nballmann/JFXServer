@@ -67,7 +67,7 @@ public class JFXServer extends Application {
 
 				while(running) {
 
-					writeLock.lock();
+					//					writeLock.lock();
 
 					try  {
 
@@ -116,6 +116,8 @@ public class JFXServer extends Application {
 
 							});
 
+							writeLock.lock();
+
 							clientStates.add(0);
 
 							DataPackage dp = new DataPackage();
@@ -123,6 +125,9 @@ public class JFXServer extends Application {
 
 							dataList.add(dp);
 							socketList.add(socket);
+
+							writeLock.unlock();
+
 							System.out.println(socketList.size());
 						}
 						else {
@@ -143,7 +148,7 @@ public class JFXServer extends Application {
 					}
 					finally {
 
-						writeLock.unlock();
+						//						writeLock.unlock();
 
 					}
 
@@ -170,6 +175,10 @@ public class JFXServer extends Application {
 
 			while (running) {
 
+				try {
+					Thread.sleep(1);
+				} catch (InterruptedException e1) { }
+
 				//				writeLock.lock();
 
 				//				synchronized (this) {
@@ -177,20 +186,25 @@ public class JFXServer extends Application {
 				for ( int i = 0; i < socketList.size(); i++ ) {
 
 					try {
-						
-						Thread.sleep(5);
+
 
 						if(socketList.get(i) != null || !socketList.get(i).isClosed())
 						{
 							oos = new ObjectOutputStream(socketList.get(i).getOutputStream());
 							int clientState = clientStates.get(i);
+
+							//							writeLock.lock();
+
 							oos.writeObject(clientState);
 							//								System.out.println("Server/send: client state");
 
 							oos = new ObjectOutputStream(socketList.get(i).getOutputStream());
+
 							oos.writeObject(dataList);
 
-							//								System.out.println("Server/send: data list");
+							//							writeLock.unlock();
+
+							//							System.out.println("Server/send: data list");
 
 							if( clientState == 1) // kicked by server
 							{
@@ -208,13 +222,14 @@ public class JFXServer extends Application {
 
 					} 
 					catch (Exception e) {
+						System.out.println("Connection Error: disconnected");
 						disconnectClient(i);
 						i--;
 						e.printStackTrace(); 
 					}
 					finally {
 
-						//	writeLock.unlock();
+						//						writeLock.unlock();
 
 					}
 
@@ -238,7 +253,7 @@ public class JFXServer extends Application {
 
 			while (running) {
 
-				writeLock.lock();
+				//				writeLock.lock();
 
 				for (int i = 0; i < socketList.size(); i++) {
 
@@ -256,7 +271,15 @@ public class JFXServer extends Application {
 
 							//							System.out.println("Server/receive: datapackage");
 
+							//							System.out.println("Server/receive: DataPackage " + dp.x + " : " + dp.y);
+
+							writeLock.lock();
+
 							dataList.set(i, dp);
+
+							writeLock.unlock();
+
+							//							System.out.println("In DataList: " + dataList.get(i).x + " : " + dataList.get(i).y);
 
 							if ( receiveState == 1 ) // client disconnected by user 
 							{
@@ -271,20 +294,24 @@ public class JFXServer extends Application {
 					catch (Exception e) // client disconnected without notification of the server
 					{
 						System.out.println("bad client disconnect");
-						disconnectClient(i);
-						i--;
+						try {
+							disconnectClient(i);
+							i--;
+						} catch (Exception e1) { }
 						//							e.printStackTrace();
 
-						for(String client : clientList) {
+						if(!clientList.isEmpty()) {
+							for(String client : clientList) {
 
-							System.out.println(client);
+								System.out.println(client);
 
+							}
 						}
 						//							break;
 					}
 					finally {
 
-						//							writeLock.unlock();
+						//													writeLock.unlock();
 
 					}
 
@@ -306,6 +333,8 @@ public class JFXServer extends Application {
 
 	public static void disconnectClient(final int index) {
 
+		writeLock.lock();
+
 		try {
 
 			Platform.runLater(new Runnable() {
@@ -325,6 +354,11 @@ public class JFXServer extends Application {
 		} catch (Exception e) { 
 			//			e.printStackTrace();
 			// not much to do here...
+		}
+		finally {
+
+			writeLock.unlock();
+
 		}
 
 	}
@@ -348,7 +382,6 @@ public class JFXServer extends Application {
 			}
 
 		});
-
 
 		//		this.stage = stage;
 
@@ -411,7 +444,7 @@ public class JFXServer extends Application {
 
 				}
 
-				Thread.sleep(220);
+				Thread.sleep(200);
 
 				running = false;
 				server.close();
