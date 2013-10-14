@@ -271,15 +271,11 @@ public class JFXServer extends Application {
 
 							//							System.out.println("Server/receive: datapackage");
 
-							//							System.out.println("Server/receive: DataPackage " + dp.x + " : " + dp.y);
-
 							writeLock.lock();
 
 							dataList.set(i, dp);
 
 							writeLock.unlock();
-
-							//							System.out.println("In DataList: " + dataList.get(i).x + " : " + dataList.get(i).y);
 
 							if ( receiveState == 1 ) // client disconnected by user 
 							{
@@ -307,7 +303,6 @@ public class JFXServer extends Application {
 
 							}
 						}
-						//							break;
 					}
 					finally {
 
